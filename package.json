@@ -1,0 +1,36 @@
+{
+  "devDependencies": {
+    "@types/compression": "^1.8.1",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/morgan": "^1.9.10",
+    "@types/multer": "^2.0.0",
+    "@types/node": "^24.3.1",
+    "typescript": "^5.9.2"
+  },
+  "name": "hkisdt-backend",
+  "version": "1.0.0",
+  "description": "Backend",
+  "main": "dist/app.js",
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "compression": "^1.8.1",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.1",
+    "multer": "^2.0.2",
+    "mysql2": "^3.14.5",
+    "undici-types": "^7.10.0"
+  },
+  "scripts": {
+    "dev": "nodemon src/app/main.ts",
+    "watch": "tsc --watch",
+    "build": "tsc",
+    "start": "node dist/app.js"
+  },
+  "author": "BENVision",
+  "license": "ISC"
+}
