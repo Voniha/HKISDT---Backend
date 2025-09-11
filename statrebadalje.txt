@@ -1,1 +1,0 @@
-middlewares, auth konkretno i responses

@@ -21,7 +21,6 @@ export class App {
     this.express = express();
     this.port = port;
     this.logger = new Logger('info', 'App');
-    this
     this.setupMiddlewares();
     this.registerHealthRoute();
     this.loadDynamicRoutes();
