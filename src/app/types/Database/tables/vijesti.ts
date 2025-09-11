@@ -1,4 +1,3 @@
-// src/types/tables/vijesti.ts
 export interface VijestiRow {
   id: number
   title: string
