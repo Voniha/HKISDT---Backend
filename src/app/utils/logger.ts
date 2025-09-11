@@ -1,5 +1,8 @@
 import chalk from "chalk";
 import { inspect } from "util";
+import type { RequestHandler } from "express";
+import type { TokenIndexer } from "morgan";
+import morgan from "morgan";
 
 type LogLevel = "error" | "warn" | "info" | "debug";
 
@@ -78,5 +81,38 @@ export default class Logger {
     return `${chalk.dim(`[${ts}]`)} ${this.colors[level](
       lvl
     )} ${ctx}${body}${metaStr}`;
+  }
+
+  /**
+   * Morgan custom format funkcija da se uklopi sa Logger-om
+   */
+  morganMiddleware(): any {
+  return morgan((tokens, req: any, res) => {
+    const status = Number(tokens.status(req, res));
+    const statusColor =
+      status >= 500
+        ? chalk.red
+        : status >= 400
+        ? chalk.yellow
+        : status >= 300
+        ? chalk.cyan
+        : chalk.green;
+
+    const ip = (req.ip || "").replace("::ffff:", "");
+    const method = chalk.gray(tokens.method(req, res));
+    const url = chalk.white(tokens.url(req, res));
+    const code = statusColor(String(status));
+    const length = chalk.blue(tokens.res(req, res, "content-length") || "0");
+    const time = chalk.magenta(tokens["response-time"](req, res) + " ms");
+    const ua = chalk.dim(req.headers["user-agent"] || "-");
+
+    const msg = `${method} ${url} ${code} ${length} - ${time} ${chalk.gray(ip)} ${ua}`;
+
+    if (status >= 500) this.error(msg);
+    else if (status >= 400) this.warn(msg);
+    else this.info(msg);
+
+    return null;
+  });
   }
 }

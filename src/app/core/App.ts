@@ -1,4 +1,4 @@
-import express, { Application, RequestHandler, Request, Response } from 'express';
+import express, { Application, RequestHandler, Request, Response, NextFunction } from 'express';
 import { json, urlencoded } from 'body-parser';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -10,6 +10,8 @@ import path from 'path';
 import { AppRoutes } from '../types/App/routes';
 import Logger from '../utils/logger';
 import Database from './Database';
+import { error } from '../utils/responses';
+import { setupGlobalErrorHandling } from './Error';
 
 export class App {
   public express: Application;
@@ -24,16 +26,25 @@ export class App {
     this.setupMiddlewares();
     this.registerHealthRoute();
     this.loadDynamicRoutes();
+    setupGlobalErrorHandling(this.logger);
+    this.express.set("trust proxy", true);
+    morgan.token("ip", (req: Request) => {
+      return (req.headers["x-forwarded-for"] || req.socket.remoteAddress)?.toString();
+    });
   }
 
   private setupMiddlewares(): void {
     this.express.use(helmet())
     this.express.use(cors())
-    this.express.use(morgan('dev'))
+    this.express.use(this.logger.morganMiddleware())
     this.express.use(compression())
     this.express.use(json())
     this.express.use(urlencoded({ extended: false }))
     this.express.use(multer().any())
+    this.express.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+      console.error(err.stack);
+      error(res, 'Internal Server Error', 500);
+    });
   }
 
   private registerHealthRoute(): void {

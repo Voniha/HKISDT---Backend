@@ -1,5 +1,6 @@
-import mysql from "mysql2/promise";
+import mysql, { PoolConnection } from "mysql2/promise";
 import type TableMap from "../types/Database/index";
+import Logger from "../utils/logger";
 
 export const mysqlConfig = {
   host: process.env.DB_HOST || "localhost",
@@ -12,9 +13,17 @@ export const mysqlConfig = {
 
 export default class MySqlDatabase {
   private pool: mysql.Pool;
+  private log = new Logger('info', 'Database');
 
   constructor() {
     this.pool = mysql.createPool(mysqlConfig);
+    this.ping().then((ok) => {
+      if (ok) {
+        this.log.info("MySQL connected");
+      } else {
+        this.log.error("MySQL connection failed");
+      }
+    });
   }
 
   public async query(sql: string, params?: any[]): Promise<any> {
@@ -120,6 +129,20 @@ export default class MySqlDatabase {
       return { data: rows, error: null };
     } catch (e: any) {
       return { data: null, error: e };
+    }
+  }
+
+  async ping(): Promise<boolean> {
+    let conn: PoolConnection | undefined;
+    try {
+      conn = await this.pool.getConnection();
+      await conn?.ping();
+      return true;
+    } catch (err) {
+      this.log.error("MySQL connection error", err);
+      return false;
+    } finally {
+      conn?.release();
     }
   }
 }
