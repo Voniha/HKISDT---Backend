@@ -3,7 +3,6 @@ import jwt from 'jsonwebtoken';
 import { success, error } from '../utils/responses';
 
 const JWT_SECRET = process.env.JWT_SECRET;
-
 export type Role = 'admin' | 'user';
 
 export const authenticate: RequestHandler = (req: any, res: any, next: any) => {
@@ -16,6 +15,7 @@ export const authenticate: RequestHandler = (req: any, res: any, next: any) => {
     req.user = payload;
     return next();
   } catch (err) {
+    console.error('JWT verification error:', err);
     return error(res, 'Invalid token', 401);
   }
 };

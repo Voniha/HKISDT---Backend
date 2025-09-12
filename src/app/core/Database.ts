@@ -7,7 +7,7 @@ export const mysqlConfig = {
   port: Number(process.env.DB_PORT || 3306),
   user: process.env.DB_USER || "root",
   password: process.env.DB_PASS || "",
-  database: process.env.DB_NAME || "hkšt",
+  database: process.env.DB_NAME || "hkšt-saquaro",
   charset: "utf8mb4",
 };
 
