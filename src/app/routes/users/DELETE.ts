@@ -26,8 +26,6 @@ export default class UsersDeleteRoute extends AppRoutes {
         (await this.app.db.delete?.("bod_clan", `id=${id}`)) ?? { data: null, error: null };
 
       if (delErr) return error(res, "Greška pri brisanju", 500, delErr);
-
-      if (!this.app.db.delete) await this.app.db.delete("bod_clan", `id=${id} LIMIT 1`);
       
 
       return success(res, "Korisnik obrisan", 200, { id });
