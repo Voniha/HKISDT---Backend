@@ -7,22 +7,19 @@ export const mysqlConfig = {
   port: Number(process.env.DB_PORT || 3306),
   user: process.env.DB_USER || "root",
   password: process.env.DB_PASS || "",
-  database: process.env.DB_NAME || "hkšt-saquaro",
+  database: process.env.DB_NAME_EXPORTS || "hkšt-exports",
   charset: "utf8mb4",
 };
 
-export default class MySqlDatabase {
+class HKSTEXPORTS {
   private pool: mysql.Pool;
-  private log = new Logger('info', 'Database');
+  private log = new Logger("info", "Database:exports");
 
   constructor() {
     this.pool = mysql.createPool(mysqlConfig);
     this.ping().then((ok) => {
-      if (ok) {
-        this.log.info("MySQL connected");
-      } else {
-        this.log.error("MySQL connection failed");
-      }
+      if (ok) this.log.info("MySQL connected");
+      else this.log.error("MySQL connection failed");
     });
   }
 
@@ -146,3 +143,4 @@ export default class MySqlDatabase {
     }
   }
 }
+export default HKSTEXPORTS;

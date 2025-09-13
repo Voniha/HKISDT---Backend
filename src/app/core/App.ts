@@ -15,7 +15,8 @@ import fs from "fs";
 import path from "path";
 import { AppRoutes } from "../types/App/routes";
 import Logger from "../utils/logger";
-import Database from "./Database";
+import HKSTWEB from "./hkst_web";
+import HKSTEXPORTS from "./hkst_exports";
 import { error } from "../utils/responses";
 import { setupGlobalErrorHandling } from "./Error";
 import rateLimit from "express-rate-limit";
@@ -27,7 +28,8 @@ export class App {
   public express: Application;
   public port: number | string;
   public logger: Logger;
-  public db: Database = new Database();
+  public hkstWeb: HKSTWEB = new HKSTWEB();
+  public hkstExports: HKSTEXPORTS = new HKSTEXPORTS();
   public upload: multer.Multer;
 
   constructor(port: number | string = process.env.PORT || 3000) {

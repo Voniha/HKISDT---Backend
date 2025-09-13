@@ -60,7 +60,7 @@ export default class UsersRoute extends AppRoutes {
     if (limit) where += ` LIMIT ${limit} OFFSET ${offset}`;
 
     try {
-      const data = await this.app.db.select(["bod_clan"], where);
+      const data = await this.app.hkstWeb.select(["bod_clan"], where);
       const rows = (data?.bod_clan as any[]) || [];
 
       const users = rows.map((r) => ({

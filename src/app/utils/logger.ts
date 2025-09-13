@@ -1,7 +1,5 @@
 import chalk from "chalk";
 import { inspect } from "util";
-import type { RequestHandler } from "express";
-import type { TokenIndexer } from "morgan";
 import morgan from "morgan";
 
 type LogLevel = "error" | "warn" | "info" | "debug";
@@ -83,9 +81,6 @@ export default class Logger {
     )} ${ctx}${body}${metaStr}`;
   }
 
-  /**
-   * Morgan custom format funkcija da se uklopi sa Logger-om
-   */
   morganMiddleware(): any {
   return morgan((tokens, req: any, res) => {
     const status = Number(tokens.status(req, res));

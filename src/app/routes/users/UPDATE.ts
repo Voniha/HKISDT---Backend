@@ -61,7 +61,7 @@ export default class UsersUpdateRoute extends AppRoutes {
         if (toUpdate.jmbg) dupeChecks.push(`jmbg='${esc(toUpdate.jmbg)}'`);
         if (dupeChecks.length) {
           const whereDupe = `(${dupeChecks.join(" OR ")}) AND id<>${id}`;
-          const existing = await this.app.db.select(["bod_clan"], whereDupe);
+          const existing = await this.app.hkstWeb.select(["bod_clan"], whereDupe);
           const rows = (existing as any)?.bod_clan as any[] | undefined;
           if (Array.isArray(rows) && rows.length) {
             return error(res, "clanid ili jmbg već postoji za drugog korisnika", 409);
@@ -69,13 +69,13 @@ export default class UsersUpdateRoute extends AppRoutes {
         }
       }
 
-      const { data: updData, error: updErr } = await this.app.db.update('bod_clan', `id=${id}`, {  ...toUpdate as any });
+      const { data: updData, error: updErr } = await this.app.hkstWeb.update('bod_clan', `id=${id}`, {  ...toUpdate as any });
 
       if (updErr) 
         return error(res, "Greška pri ažuriranju", 500, updErr);
       
 
-      const sel = await this.app.db.select(["bod_clan"], `id=${id} LIMIT 1`);
+      const sel = await this.app.hkstWeb.select(["bod_clan"], `id=${id} LIMIT 1`);
       const rows = (sel?.bod_clan as any[]) || [];
       if (!rows.length) return error(res, "Korisnik nije pronađen nakon ažuriranja", 404);
 

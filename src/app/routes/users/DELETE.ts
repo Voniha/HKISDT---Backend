@@ -18,12 +18,12 @@ export default class UsersDeleteRoute extends AppRoutes {
     if (!Number.isFinite(id) || id <= 0) return error(res, "Neispravan ID", 400);
 
     try {
-      const existing = await this.app.db.select(["bod_clan"], `id=${id} LIMIT 1`);
+      const existing = await this.app.hkstExports.select(["bod_clan"], `id=${id} LIMIT 1`);
       const row = (existing?.bod_clan as any[])?.[0];
       if (!row) return error(res, "Korisnik nije pronađen", 404);
 
       const { data: delData, error: delErr } =
-        (await this.app.db.delete?.("bod_clan", `id=${id}`)) ?? { data: null, error: null };
+        (await this.app.hkstExports.delete?.("bod_clan", `id=${id}`)) ?? { data: null, error: null };
 
       if (delErr) return error(res, "Greška pri brisanju", 500, delErr);
       

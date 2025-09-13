@@ -29,4 +29,32 @@ export const authorize = (...roles: Role[]): RequestHandler => {
   };
 };
 
+export const matchQueryToUser: RequestHandler = (req: any, res: any, next: any) => {
+  const header = String(req.headers?.authorization ?? '');
+  let payload: any = null;
+
+  if (header.startsWith('Bearer ')) {
+    const token = header.slice(7).trim();
+    if (token) {
+      try {
+        payload = jwt.verify(token, JWT_SECRET as string);
+      } catch (err) {
+        console.error(err);
+        payload = null;
+      }
+    }
+  }
+
+  req.user = payload;
+
+  const q = String(req.query?.q ?? '').trim();
+  if (q) {
+    if (!payload) return error(res, 'Unauthorized', 401);
+    const userId = String(payload.id ?? payload.userId ?? '');
+    if (userId !== q && payload.role !== 'admin') return error(res, 'Forbidden', 403);
+  }
+
+  return next();
+};
+
 export default authenticate;

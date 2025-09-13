@@ -1,3 +1,6 @@
+import bcrypt from "bcrypt";
+import crypto from "crypto";
+
 const VALID_FIELDS = ["id", "email", "role", "created_at", "avatar"] as const;
 type Field = (typeof VALID_FIELDS)[number];
 
@@ -26,4 +29,30 @@ const trimMax = (v: unknown, n: number) =>
 const isDateYYYYMMDD = (v: unknown) =>
   typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
 
-export { toList, esc, clamp, VALID_FIELDS, Field, trimMax, isDateYYYYMMDD };
+function norm(v?: unknown): string {
+  return typeof v === "string" ? v.trim() : "";
+}
+
+const q = (v: string) => `'${String(v).replace(/\\/g, "\\\\").replace(/'/g, "\\'")}'`;
+
+async function verifyPassword(stored?: string | null, supplied = ""): Promise<boolean> {
+  if (!stored) return false;
+  const s = String(stored);
+  if (/^\$2[aby]\$/.test(s)) {
+    try {
+      return await bcrypt.compare(supplied, s);
+    } catch {
+      return false;
+    }
+  }
+  try {
+    const a = Buffer.from(s);
+    const b = Buffer.from(supplied);
+    if (a.length !== b.length) return false;
+    return crypto.timingSafeEqual(a, b);
+  } catch {
+    return s === supplied;
+  }
+}
+
+export { toList, esc, clamp, VALID_FIELDS, Field, trimMax, isDateYYYYMMDD, norm, q, verifyPassword };
