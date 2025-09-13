@@ -15,6 +15,7 @@ export const authenticate: RequestHandler = (req: any, res: any, next: any) => {
     req.user = payload;
     return next();
   } catch (err) {
+    console.error(err);
     return error(res, 'Invalid token', 401);
   }
 };

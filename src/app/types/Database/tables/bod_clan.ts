@@ -1,6 +1,7 @@
 export interface ClanoviRow {
   id: number;
   clanid: string | null;
+  role: 'admin' | 'user';
   ime: string | null;
   prezime: string | null;
   datum: string | Date | null;

@@ -44,6 +44,7 @@ class AuthLoginRoute extends AppRoutes {
         clanid: user.clanid,
         ime: user.ime,
         prezime: user.prezime,
+        role: user.role
       };
 
       const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES } as SignOptions);

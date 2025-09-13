@@ -35,7 +35,7 @@ export default class UsersRoute extends AppRoutes {
     const orderBy = orderByWhitelist.includes(String(req.query.sort)) ? String(req.query.sort) : "id";
     const dir = String(req.query.dir || "desc").toLowerCase() === "asc" ? "asc" : "desc";
 
-    const effectivePage = limit ? page : 1; // page ignored when no limit
+    const effectivePage = limit ? page : 1;
     const offset = limit ? (effectivePage - 1) * limit : 0;
 
     const parts: string[] = [];
