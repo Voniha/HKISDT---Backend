@@ -31,23 +31,25 @@ class AuthRegisterRoute extends AppRoutes {
       const where = `jmbg='${esc(prepared.jmbg)}' LIMIT 1`;
       const existing = await this.app.hkstWeb.select(["admins"], where);
       const admins = (existing?.admins as AdminsRow[]) ?? [];
-      if (admins.length) return error(res, "Admin s tim JMBG već postoji", 409);
+      if (admins.length) return error(res, "Admin s tim JMBG-om već postoji", 409);
 
       const toInsert: Record<string, any> = { jmbg: prepared.jmbg };
       if (prepared.ime) toInsert.ime = prepared.ime;
       if (prepared.prezime) toInsert.prezime = prepared.prezime;
 
       const { data, error: dbErr } = await this.app.hkstWeb.insert("admins", toInsert);
-      if (dbErr) return error(res, "Greška pri registraciji (admin)", 500, dbErr);
+      if (dbErr) return error(res, "Greška pri registraciji novoga admina", 500, dbErr);
 
       const insertId = Number((data?.insertId ?? data?.insertID) || 0);
-      const payload = { id: insertId, jmbg: prepared.jmbg, ime: prepared.ime ?? null, prezime: prepared.prezime ?? null, role: "admin" as const };
-      const token = jwt.sign(payload, JWT_SECRET as Secret, SIGN_OPTS);
+      if (!insertId) return error(res, "Greška pri registraciji novoga admina", 500, {
+        message: "Nije moguće dobiti ID novog admina" 
+      });
 
-      return success(res, "Registracija uspješna (admin)", 201, {
-        type: "bearer",
-        token,
-        user: { id: insertId, jmbg: prepared.jmbg, ime: prepared.ime ?? null, prezime: prepared.prezime ?? null, role: "admin" },
+      return success(res, "Registracija novoga admina uspješna", 201, {
+        id: insertId,
+        jmbg: toInsert.jmbg,
+        ime: toInsert.ime,
+        prezime: toInsert.prezime,
       });
     } catch (err: any) {
       return error(res, "Greška pri registraciji", 500, err?.message ?? err);

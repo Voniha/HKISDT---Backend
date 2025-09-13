@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { AppRoutes } from "../../types/App/routes";
 import { success, error } from "../../utils/responses";
-import { authenticate } from "../../middlewares/auth";
+import { authenticate, authorize, matchQueryToUser } from "../../middlewares/auth";
 import App from "../../core/App";
 import { clamp, esc } from "../../utils/helpers";
 
@@ -10,7 +10,7 @@ export default class UsersRoute extends AppRoutes {
     super(app, {
       route: "/api/users",
       method: "get",
-      middlewares: [authenticate],
+      middlewares: [authenticate, matchQueryToUser],
     });
   }
 
@@ -60,7 +60,7 @@ export default class UsersRoute extends AppRoutes {
     if (limit) where += ` LIMIT ${limit} OFFSET ${offset}`;
 
     try {
-      const data = await this.app.hkstWeb.select(["bod_clan"], where);
+      const data = await this.app.hkstExports.select(["bod_clan"], where);
       const rows = (data?.bod_clan as any[]) || [];
 
       const users = rows.map((r) => ({

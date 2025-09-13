@@ -56,7 +56,7 @@ class AuthLoginRoute extends AppRoutes {
       if (!ok) return error(res, "Neispravni podaci", 401);
 
       const role = (member.role as string) || "user";
-      const payload = { sub: String(member.id), role, clanid: member.clanid ?? null };
+      const payload = { jmbg: String(member.jmbg), sub: String(member.id), role, clanid: member.clanid ?? null };
       const token = jwt.sign(payload, JWT_SECRET, SIGN_OPTS);
 
       logger.info?.("Auth: member login", { memberId: member.id });

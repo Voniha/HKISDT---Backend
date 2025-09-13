@@ -31,30 +31,25 @@ export const authorize = (...roles: Role[]): RequestHandler => {
 
 export const matchQueryToUser: RequestHandler = (req: any, res: any, next: any) => {
   const header = String(req.headers?.authorization ?? '');
-  let payload: any = null;
+  if (!header.startsWith('Bearer ')) return error(res, 'Unauthorized', 401);
+  const token = header.slice(7).trim();
+  if (!token) return error(res, 'Unauthorized', 401);
 
-  if (header.startsWith('Bearer ')) {
-    const token = header.slice(7).trim();
-    if (token) {
-      try {
-        payload = jwt.verify(token, JWT_SECRET as string);
-      } catch (err) {
-        console.error(err);
-        payload = null;
-      }
-    }
+  let payload: any;
+  try {
+    payload = jwt.verify(token, JWT_SECRET as string);
+  } catch {
+    return error(res, 'Invalid token', 401);
   }
 
   req.user = payload;
-
+  if (payload.role === 'admin') return next();
   const q = String(req.query?.q ?? '').trim();
-  if (q) {
-    if (!payload) return error(res, 'Unauthorized', 401);
-    const userId = String(payload.id ?? payload.userId ?? '');
-    if (userId !== q && payload.role !== 'admin') return error(res, 'Forbidden', 403);
-  }
-
-  return next();
+  const userId = String(payload.jmbg ?? '').trim();
+  const target = q || req.params?.jmbg || req.body?.jmbg || null;
+  if (!target) return error(res, 'Unauthorized', 401);
+  if (userId === target) return next();
+  return error(res, 'Forbidden', 403);
 };
 
 export default authenticate;
