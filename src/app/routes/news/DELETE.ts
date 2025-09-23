@@ -18,7 +18,7 @@ export default class NewsDeleteRoute extends AppRoutes {
       const row = (sel?.vijesti as any[])?.[0];
       if (!row) return error(res, "Vijest nije pronađena", 404);
 
-      const delRes = await this.app.hkstWeb.delete("vijesti", `id=${id}`);
+      const delRes = await this.app.hkstExports.delete("vijesti", `id=${id}`);
       if (delRes?.error) return error(res, "Greška pri brisanju vijesti", 500, delRes.error);
 
       return success(res, "Vijest obrisana", 200, { id, ...row });

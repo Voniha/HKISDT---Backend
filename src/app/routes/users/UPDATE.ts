@@ -50,7 +50,7 @@ export default class UsersUpdateRoute extends AppRoutes {
         if (candidate.jmbg) checks.push(`jmbg='${esc(candidate.jmbg)}'`);
         if (checks.length) {
           const whereDupe = `(${checks.join(" OR ")}) AND id<>${id}`;
-          const existing = await this.app.hkstWeb.select(["bod_clan"], whereDupe);
+          const existing = await this.app.hkstExports.select(["bod_clan"], whereDupe);
           const rows = (existing as any)?.bod_clan as any[] | undefined;
           if (Array.isArray(rows) && rows.length) {
             return error(res, "clanid ili jmbg već postoji za drugog korisnika", 409);
@@ -66,7 +66,7 @@ export default class UsersUpdateRoute extends AppRoutes {
 
       if (Object.keys(toUpdate).length === 0) return error(res, "Nijedno polje za ažuriranje nije prisutno u tablici", 400);
       
-      const { data: updData, error: updErr } = await this.app.hkstWeb.update(
+      const { data: updData, error: updErr } = await this.app.hkstExports.update(
         "bod_clan",
         `id=${id}`,
         toUpdate as ClanoviRow 
@@ -75,7 +75,7 @@ export default class UsersUpdateRoute extends AppRoutes {
       if (updErr) return error(res, "Greška pri ažuriranju", 500, updErr);
       if ((updData?.affectedRows ?? 0) === 0) return error(res, "Korisnik nije pronađen", 404);
       
-      const sel = await this.app.hkstWeb.select(["bod_clan"], `id=${id} LIMIT 1`);
+      const sel = await this.app.hkstExports.select(["bod_clan"], `id=${id} LIMIT 1`);
       const rows = (sel?.bod_clan as any[]) || [];
       if (!rows.length) return error(res, "Korisnik nije pronađen nakon ažuriranja", 404);
 
