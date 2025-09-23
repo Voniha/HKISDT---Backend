@@ -9,7 +9,6 @@ type ReqBody = {
   titulaispis?: unknown;
   jmbg?: unknown;
   lozinka?: unknown;
-  role?: unknown;
 };
 
 export default ReqBody;

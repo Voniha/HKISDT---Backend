@@ -142,5 +142,14 @@ class HKSTEXPORTS {
       conn?.release();
     }
   }
+
+  public async raw(sql: string): Promise<any> {
+    try {
+      const rows = await this.query(sql);
+      return rows;
+    } catch (e: any) {
+      return { error: e?.message ?? e };
+    }
+  }
 }
 export default HKSTEXPORTS;

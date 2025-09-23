@@ -5,13 +5,11 @@ import { success, error } from "../../utils/responses";
 import App from "../../core/App";
 import ClanoviRow from "../../types/Database/tables/HKST_EXPORTS/bod_clan";
 import AdminsRow from "../../types/Database/tables/HKST_WEB/admins";
-import { norm, q, verifyPassword } from "../../utils/helpers"
+import { norm, q, verifyPassword, LoginBody } from "../../utils/helpers";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret";
 const JWT_EXPIRES = process.env.JWT_EXPIRES || "7d";
 const SIGN_OPTS: SignOptions = { expiresIn: JWT_EXPIRES as SignOptions["expiresIn"] };
-
-type LoginBody = { clanid?: string; jmbg?: string; lozinka?: string };
 
 class AuthLoginRoute extends AppRoutes {
   constructor(app: App) {

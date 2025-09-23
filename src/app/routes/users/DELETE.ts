@@ -1,34 +1,34 @@
 import { Request, Response } from "express";
 import { AppRoutes } from "../../types/App/routes";
 import { success, error } from "../../utils/responses";
-import { authenticate } from "../../middlewares/auth";
+import { authenticate, authorize } from "../../middlewares/auth";
 import App from "../../core/App";
 
 export default class UsersDeleteRoute extends AppRoutes {
   constructor(app: App) {
     super(app, {
-      route: "/api/users",
+      route: "/api/users/:id",
       method: "delete",
-      middlewares: [authenticate],
+      middlewares: [authenticate, authorize("admin")],
     });
   }
 
   async handle(req: Request, res: Response) {
-    const id = Number(req.query.id);
+    const id = Number(req.params.id);
     if (!Number.isFinite(id) || id <= 0) return error(res, "Neispravan ID", 400);
 
     try {
-      const existing = await this.app.hkstExports.select(["bod_clan"], `id=${id} LIMIT 1`);
-      const row = (existing?.bod_clan as any[])?.[0];
+      const sel = await this.app.hkstWeb.select(["bod_clan"], `id=${id} LIMIT 1`);
+      const row = (sel?.bod_clan as any[])?.[0];
       if (!row) return error(res, "Korisnik nije pronađen", 404);
 
-      const { data: delData, error: delErr } =
-        (await this.app.hkstExports.delete?.("bod_clan", `id=${id}`)) ?? { data: null, error: null };
+      const delResult = await this.app.hkstWeb.delete("bod_clan", `id=${id}`);
+      if (delResult?.error) return error(res, "Greška pri brisanju korisnika", 500, delResult.error);
 
-      if (delErr) return error(res, "Greška pri brisanju", 500, delErr);
-      
-
-      return success(res, "Korisnik obrisan", 200, { id });
+      return success(res, "Korisnik obrisan", 200, {
+        id,
+        ...row
+      });
     } catch (e: any) {
       return error(res, "Greška pri brisanju korisnika", 500, e?.message ?? e);
     }

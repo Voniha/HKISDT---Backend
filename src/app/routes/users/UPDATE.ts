@@ -3,7 +3,9 @@ import { AppRoutes } from "../../types/App/routes";
 import { success, error } from "../../utils/responses";
 import { authenticate } from "../../middlewares/auth";
 import App from "../../core/App";
-import { trimMax, isDateYYYYMMDD, esc } from "../../utils/helpers";
+import { getTableColumns } from "../../utils/columns";
+import { bod_clan_columns, trimMax, isDateYYYYMMDD, esc } from "../../utils/helpers";
+import ClanoviRow from "../../types/Database/tables/HKST_EXPORTS/bod_clan";
 
 export default class UsersUpdateRoute extends AppRoutes {
   constructor(app: App) {
@@ -20,47 +22,34 @@ export default class UsersUpdateRoute extends AppRoutes {
 
     const body = (req.body ?? {}) as Record<string, unknown>;
 
-    const fieldConfig: Record<string, number | "date"> = {
-      clanid: 6,
-      ime: 32,
-      prezime: 32,
-      datum: "date",
-      broj: 6,
-      oznaka: 2,
-      titulanaz: 64,
-      titulaispis: 64,
-      jmbg: 14,
-      lozinka: 20,
-    };
+    const candidate: Record<string, any> = {};
+    for (const key of Object.keys(bod_clan_columns)) {
+      if (!Object.prototype.hasOwnProperty.call(body, key)) continue;
+      const raw = body[key];
+      if (raw === undefined || raw === null) continue;
 
-    const toUpdate: Record<string, any> = {};
-
-    for (const [field, limit] of Object.entries(fieldConfig)) {
-      if (!(field in body)) continue;
-      const val = body[field];
-      if (val === undefined || val === null) continue;
-
+      const limit = bod_clan_columns[key];
       if (limit === "date") {
-        if (isDateYYYYMMDD(val)) toUpdate[field] = String(val);
-      } else {
-        if (typeof val !== "string") continue;
-        const trimmed = trimMax(val, limit as number);
-        if (trimmed === "") continue;
-        toUpdate[field] = trimmed;
+        if (isDateYYYYMMDD(raw)) candidate[key] = String(raw);
+        continue;
       }
+
+      if (typeof raw !== "string") continue;
+      const v = trimMax(raw, limit as number);
+      if (v === "") continue;
+      candidate[key] = v;
     }
 
-    if (Object.keys(toUpdate).length === 0) {
-      return error(res, "Nema valjanih polja za ažuriranje", 400);
-    }
+    if (Object.keys(candidate).length === 0) return error(res, "Nema valjanih polja za ažuriranje", 400);
+    
 
     try {
-      if (toUpdate.clanid || toUpdate.jmbg) {
-        const dupeChecks: string[] = [];
-        if (toUpdate.clanid) dupeChecks.push(`clanid='${esc(toUpdate.clanid)}'`);
-        if (toUpdate.jmbg) dupeChecks.push(`jmbg='${esc(toUpdate.jmbg)}'`);
-        if (dupeChecks.length) {
-          const whereDupe = `(${dupeChecks.join(" OR ")}) AND id<>${id}`;
+      if (candidate.clanid || candidate.jmbg) {
+        const checks: string[] = [];
+        if (candidate.clanid) checks.push(`clanid='${esc(candidate.clanid)}'`);
+        if (candidate.jmbg) checks.push(`jmbg='${esc(candidate.jmbg)}'`);
+        if (checks.length) {
+          const whereDupe = `(${checks.join(" OR ")}) AND id<>${id}`;
           const existing = await this.app.hkstWeb.select(["bod_clan"], whereDupe);
           const rows = (existing as any)?.bod_clan as any[] | undefined;
           if (Array.isArray(rows) && rows.length) {
@@ -69,12 +58,23 @@ export default class UsersUpdateRoute extends AppRoutes {
         }
       }
 
-      const { data: updData, error: updErr } = await this.app.hkstWeb.update('bod_clan', `id=${id}`, {  ...toUpdate as any });
+      const allowedCols = await getTableColumns(this.app, "bod_clan");
+      const toUpdate: Record<string, any> = {};
+      for (const [k, v] of Object.entries(candidate)) {
+        if (allowedCols.has(k)) toUpdate[k] = v;
+      }
 
-      if (updErr) 
-        return error(res, "Greška pri ažuriranju", 500, updErr);
+      if (Object.keys(toUpdate).length === 0) return error(res, "Nijedno polje za ažuriranje nije prisutno u tablici", 400);
       
+      const { data: updData, error: updErr } = await this.app.hkstWeb.update(
+        "bod_clan",
+        `id=${id}`,
+        toUpdate as ClanoviRow 
+      );
 
+      if (updErr) return error(res, "Greška pri ažuriranju", 500, updErr);
+      if ((updData?.affectedRows ?? 0) === 0) return error(res, "Korisnik nije pronađen", 404);
+      
       const sel = await this.app.hkstWeb.select(["bod_clan"], `id=${id} LIMIT 1`);
       const rows = (sel?.bod_clan as any[]) || [];
       if (!rows.length) return error(res, "Korisnik nije pronađen nakon ažuriranja", 404);

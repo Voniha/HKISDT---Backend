@@ -1,9 +1,10 @@
 import { Request, Response } from "express";
 import { AppRoutes } from "../../types/App/routes";
 import { success, error } from "../../utils/responses";
-import { authenticate, authorize, matchQueryToUser } from "../../middlewares/auth";
+import { authenticate, matchQueryToUser } from "../../middlewares/auth";
 import App from "../../core/App";
 import { clamp, esc } from "../../utils/helpers";
+import { getTableColumns, getDir } from "../../utils/columns";
 
 export default class UsersRoute extends AppRoutes {
   constructor(app: App) {
@@ -17,24 +18,12 @@ export default class UsersRoute extends AppRoutes {
   async handle(req: Request, res: Response) {
     const page = clamp(Number(req.query.page || 1), 1, 1_000_000);
     const rawLimit = req.query.limit ? Number(req.query.limit) : undefined;
-    const limit = rawLimit !== undefined && Number.isFinite(rawLimit) && rawLimit > 0 ? clamp(rawLimit, 1, 100) : undefined;
+    const limit =
+      rawLimit !== undefined && Number.isFinite(rawLimit) && rawLimit > 0
+        ? clamp(rawLimit, 1, 100)
+        : undefined;
     const q = String(req.query.q || "").trim().toLowerCase();
-
-    const orderByWhitelist = [
-      "id",
-      "clanid",
-      "ime",
-      "prezime",
-      "datum",
-      "broj",
-      "oznaka",
-      "titulanaz",
-      "titulaispis",
-      "jmbg",
-    ];
-    const orderBy = orderByWhitelist.includes(String(req.query.sort)) ? String(req.query.sort) : "id";
-    const dir = String(req.query.dir || "desc").toLowerCase() === "asc" ? "asc" : "desc";
-
+    const dir = getDir(req.query.dir);
     const effectivePage = limit ? page : 1;
     const offset = limit ? (effectivePage - 1) * limit : 0;
 
@@ -55,11 +44,15 @@ export default class UsersRoute extends AppRoutes {
       );
     }
 
-    let where = parts.length ? `(${parts.join(") AND (")})` : "1=1";
-    where += ` ORDER BY ${orderBy} ${dir}`;
-    if (limit) where += ` LIMIT ${limit} OFFSET ${offset}`;
-
     try {
+      const allowed = await getTableColumns(this.app, "bod_clan");
+      const requestedSort = String(req.query.sort ?? "id").trim();
+      const orderBy = allowed.has(requestedSort) ? requestedSort : "id";
+
+      let where = parts.length ? `(${parts.join(") AND (")})` : "1=1";
+      where += ` ORDER BY ${orderBy} ${dir}`;
+      if (limit) where += ` LIMIT ${limit} OFFSET ${offset}`;
+
       const data = await this.app.hkstExports.select(["bod_clan"], where);
       const rows = (data?.bod_clan as any[]) || [];
 
