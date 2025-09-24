@@ -151,6 +151,82 @@ class HKSTWEB {
       return { error: e?.message ?? e };
     }
   }
+
+    public async getPageDocuments(
+    opts: { pageId?: number; pageSlug?: string; includeChildren?: boolean; }
+  ): Promise<{ data: any; error: any | null }> {
+    const { pageId, pageSlug, includeChildren = false } = opts || {};
+
+    try {
+      let pid: number | null = pageId ?? null;
+
+      if (!pid && pageSlug && String(pageSlug).trim()) {
+        const slug = String(pageSlug).trim();
+        const rows = await this.query("SELECT id FROM `stranice` WHERE slug = ? LIMIT 1", [slug]);
+        pid = (Array.isArray(rows) && rows[0] && rows[0].id) ? Number(rows[0].id) : null;
+      }
+
+      if (!pid) {
+        return { data: null, error: "Nedostaje pageId ili pageSlug" };
+      }
+
+      let sql: string;
+      let params: any[] = [];
+
+      if (includeChildren) {
+        sql = `
+          WITH RECURSIVE pages_cte AS (
+            SELECT id FROM \`stranice\` WHERE id = ?
+            UNION ALL
+            SELECT s.id FROM \`stranice\` s JOIN pages_cte p ON s.nadrazina_id = p.id
+          )
+          SELECT
+            b.id AS blok_id,
+            b.stranica_id,
+            b.pozicija,
+            b.sadrzaj AS blok_label,
+            b.url AS eksterni_url,
+            d.id AS dokument_id,
+            d.naziv_datoteke,
+            d.mime_tip,
+            d.velicina_bajtova,
+            d.sha256,
+            d.kreirano AS dokument_kreirano
+          FROM \`blokovi_sadrzaja\` b
+          LEFT JOIN \`dokumenti\` d ON d.id = b.dokument_id
+          WHERE b.vrsta = 'dokument' AND b.stranica_id IN (SELECT id FROM pages_cte)
+          ORDER BY b.stranica_id, b.pozicija, b.id
+        `;
+        params = [pid];
+      } else {
+        sql = `
+          SELECT
+            b.id AS blok_id,
+            b.stranica_id,
+            b.pozicija,
+            b.sadrzaj AS blok_label,
+            b.url AS eksterni_url,
+            d.id AS dokument_id,
+            d.naziv_datoteke,
+            d.mime_tip,
+            d.velicina_bajtova,
+            d.sha256,
+            d.kreirano AS dokument_kreirano
+          FROM \`blokovi_sadrzaja\` b
+          LEFT JOIN \`dokumenti\` d ON d.id = b.dokument_id
+          WHERE b.vrsta = 'dokument' AND b.stranica_id = ?
+          ORDER BY b.pozicija, b.id
+        `;
+        params = [pid];
+      }
+
+      const rows = await this.query(sql, params);
+      return { data: rows, error: null };
+    } catch (e: any) {
+      return { data: null, error: e };
+    }
+  }
+
 }
 
 export default HKSTWEB;
